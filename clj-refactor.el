@@ -976,12 +976,19 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
          (test-name (car (last ns-chunks)))
          (src-dir-name (replace-regexp-in-string "test/" "src/" (file-name-directory test-file) t t))
          (replace-underscore (apply-partially 'replace-regexp-in-string "_" "-"))
-         (src-ns (car (seq-filter (lambda (it) (or (string-prefix-p it test-name)
+         (possible-names (seq-filter (lambda (it) (or (string-prefix-p it test-name)
                                                    (string-suffix-p it test-name)))
                                   (seq-map (lambda (file-name)
                                              (funcall replace-underscore
                                                       (file-name-sans-extension file-name)))
-                                           (directory-files src-dir-name))))))
+                                           (directory-files src-dir-name))))
+         (src-ns (seq-reduce (lambda (longest-name possible-name)
+                               (if (> (length possible-name)
+                                      (length longest-name))
+                                   possible-name
+                                 longest-name))
+                             possible-names
+                             nil)))
     (when src-ns
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
